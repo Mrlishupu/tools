@@ -1,0 +1,1620 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0B1220">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>智慧教室设备能耗优化管理系统</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230B1220'/%3E%3Cpath d='M17 4 L8 18 h6 L14 28 L24 13 h-6 Z' fill='%2322D3EE'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://miaoda.feishu.cn/fonts/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+<style>
+:root{
+  --bg:#0B1220;
+  --bg-soft:#111A2E;
+  --bg-card:#152036;
+  --bg-card-hover:#1A2742;
+  --line:#1F2C4A;
+  --text:#E5EAF3;
+  --text-dim:#8B9BB8;
+  --text-mute:#5A6B8A;
+  --cyan:#22D3EE;
+  --cyan-dim:rgba(34,211,238,.15);
+  --green:#34D399;
+  --green-dim:rgba(52,211,153,.15);
+  --amber:#F59E0B;
+  --amber-dim:rgba(245,158,11,.15);
+  --red:#F87171;
+  --red-dim:rgba(248,113,113,.15);
+  --purple:#A78BFA;
+  --radius:10px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  font-family:"Noto Sans SC",-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+  background:var(--bg);color:var(--text);font-size:14px;line-height:1.6;
+  overflow:hidden;
+  -webkit-text-size-adjust:100%;
+  overscroll-behavior:none;
+}
+.mono{font-family:"JetBrains Mono",ui-monospace,monospace}
+
+/* ====== 整体布局 ====== */
+.app{display:flex;height:100vh;height:100dvh}
+.sidebar{
+  width:232px;flex-shrink:0;background:#0E1729;border-right:1px solid var(--line);
+  display:flex;flex-direction:column;
+}
+.main{flex:1;display:flex;flex-direction:column;min-width:0}
+
+/* ====== 侧边栏 ====== */
+.logo{
+  padding:20px 20px 18px;display:flex;align-items:center;gap:12px;
+  border-bottom:1px solid var(--line);
+}
+.logo-mark{
+  width:36px;height:36px;border-radius:8px;flex-shrink:0;
+  background:linear-gradient(135deg,#22D3EE,#0EA5E9);
+  display:flex;align-items:center;justify-content:center;
+}
+.logo-mark svg{width:20px;height:20px;color:#0B1220}
+.logo-text{line-height:1.2}
+.logo-text .t1{font-size:14px;font-weight:600;letter-spacing:.5px}
+.logo-text .t2{font-size:11px;color:var(--text-mute);margin-top:2px}
+
+.nav{flex:1;overflow-y:auto;padding:12px 10px;-webkit-overflow-scrolling:touch}
+.nav-group{margin-bottom:14px}
+.nav-title{
+  font-size:11px;color:var(--text-mute);padding:6px 12px;letter-spacing:1px;
+  text-transform:uppercase;
+}
+.nav-item{
+  display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;
+  color:var(--text-dim);cursor:pointer;font-size:13.5px;margin-bottom:2px;
+  transition:all .15s;user-select:none;
+}
+.nav-item svg{width:17px;height:17px;flex-shrink:0}
+.nav-item:hover{background:var(--bg-card);color:var(--text)}
+.nav-item:active{background:var(--bg-card-hover)}
+.nav-item.active{
+  background:linear-gradient(90deg,rgba(34,211,238,.18),rgba(34,211,238,.05));
+  color:var(--cyan);font-weight:500;
+  border-left:2px solid var(--cyan);padding-left:10px;
+}
+.nav-badge{
+  margin-left:auto;background:var(--red);color:#fff;font-size:10px;
+  padding:1px 6px;border-radius:8px;font-weight:600;
+}
+.sidebar-foot{
+  padding:14px 20px;border-top:1px solid var(--line);
+  font-size:11px;color:var(--text-mute);
+}
+
+/* ====== 顶部栏 ====== */
+.topbar{
+  height:56px;border-bottom:1px solid var(--line);background:var(--bg);
+  display:flex;align-items:center;padding:0 24px;gap:16px;flex-shrink:0;
+}
+.menu-btn{
+  display:none;align-items:center;justify-content:center;
+  width:36px;height:36px;flex-shrink:0;border-radius:8px;
+  border:1px solid var(--line);background:var(--bg-card);color:var(--text);
+  cursor:pointer;transition:all .15s;padding:0;
+}
+.menu-btn:active{background:var(--bg-card-hover);border-color:var(--cyan)}
+.menu-btn svg{width:18px;height:18px}
+.crumb{font-size:14px;color:var(--text);font-weight:500;min-width:0}
+.crumb .sep{color:var(--text-mute);margin:0 8px}
+.crumb .sub{color:var(--text-dim);font-weight:400;font-size:13px}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:14px;flex-shrink:0}
+.top-search{
+  background:var(--bg-card);border:1px solid var(--line);border-radius:8px;
+  padding:6px 12px;color:var(--text-dim);font-size:12.5px;width:220px;
+  display:flex;align-items:center;gap:8px;cursor:text;
+}
+.top-search svg{width:14px;height:14px}
+.top-clock{font-size:12.5px;color:var(--text-dim);text-align:right;line-height:1.35}
+.top-clock .time{color:var(--cyan);font-weight:600;font-size:14px}
+.avatar{
+  width:32px;height:32px;border-radius:50%;flex-shrink:0;
+  background:linear-gradient(135deg,#A78BFA,#6366F1);
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:600;color:#fff;
+}
+
+/* ====== 内容区 ====== */
+.content{
+  flex:1;overflow-y:auto;padding:20px 24px;
+  -webkit-overflow-scrolling:touch;
+  padding-bottom:calc(20px + env(safe-area-inset-bottom, 0px));
+}
+.view{display:none}
+.view.active{display:block}
+
+/* ====== 通用卡片 ====== */
+.grid{display:grid;gap:16px}
+.grid-4{grid-template-columns:repeat(4,1fr)}
+.grid-3{grid-template-columns:repeat(3,1fr)}
+.grid-2{grid-template-columns:repeat(2,1fr)}
+.card{
+  background:var(--bg-card);border:1px solid var(--line);border-radius:var(--radius);
+  padding:18px 20px;min-width:0;
+}
+.card-title{
+  font-size:14px;font-weight:600;margin-bottom:14px;
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+}
+.card-title .dot{width:4px;height:14px;border-radius:2px;background:var(--cyan);flex-shrink:0}
+.card-title .extra{margin-left:auto;font-size:12px;color:var(--text-dim);font-weight:400}
+
+/* KPI 卡 */
+.kpi{
+  background:var(--bg-card);border:1px solid var(--line);border-radius:var(--radius);
+  padding:18px 20px;position:relative;overflow:hidden;min-width:0;
+}
+.kpi .label{font-size:12.5px;color:var(--text-dim);margin-bottom:8px}
+.kpi .value{font-size:28px;font-weight:700;letter-spacing:-.5px}
+.kpi .value .unit{font-size:13px;font-weight:400;color:var(--text-dim);margin-left:4px}
+.kpi .delta{font-size:12px;margin-top:8px;display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.kpi .delta.up{color:var(--red)}
+.kpi .delta.down{color:var(--green)}
+.kpi .icon{
+  position:absolute;right:16px;top:16px;width:38px;height:38px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+}
+.kpi .icon svg{width:20px;height:20px}
+.icon.cyan{background:var(--cyan-dim);color:var(--cyan)}
+.icon.green{background:var(--green-dim);color:var(--green)}
+.icon.amber{background:var(--amber-dim);color:var(--amber)}
+.icon.purple{background:rgba(167,139,250,.15);color:var(--purple)}
+
+/* 教室状态网格 */
+.room-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:10px}
+.room-cell{
+  background:var(--bg-soft);border:1px solid var(--line);border-radius:8px;
+  padding:12px;cursor:pointer;transition:all .15s;min-width:0;
+}
+.room-cell:hover{border-color:var(--cyan);transform:translateY(-1px)}
+.room-cell:active{border-color:var(--cyan)}
+.room-cell .r-name{font-size:13px;font-weight:600;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;gap:6px}
+.room-cell .r-power{font-size:11px;color:var(--text-dim);margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.room-cell .r-power .num{color:var(--text);font-weight:600}
+.room-bar{height:4px;border-radius:2px;background:var(--line);overflow:hidden}
+.room-bar i{display:block;height:100%;border-radius:2px}
+.status-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.st-normal{background:var(--green);box-shadow:0 0 6px var(--green)}
+.st-warn{background:var(--amber);box-shadow:0 0 6px var(--amber)}
+.st-error{background:var(--red);box-shadow:0 0 6px var(--red);animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* 告警列表 */
+.alarm-item{
+  display:flex;gap:12px;padding:12px;border-radius:8px;
+  background:var(--bg-soft);margin-bottom:8px;align-items:flex-start;
+}
+.alarm-item.sev-high{border-left:3px solid var(--red)}
+.alarm-item.sev-mid{border-left:3px solid var(--amber)}
+.alarm-item.sev-low{border-left:3px solid var(--cyan)}
+.alarm-icon{
+  width:32px;height:32px;border-radius:8px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+}
+.alarm-icon svg{width:16px;height:16px}
+.sev-high .alarm-icon{background:var(--red-dim);color:var(--red)}
+.sev-mid .alarm-icon{background:var(--amber-dim);color:var(--amber)}
+.sev-low .alarm-icon{background:var(--cyan-dim);color:var(--cyan)}
+.alarm-body{flex:1;min-width:0}
+.alarm-title{font-size:13.5px;font-weight:500;margin-bottom:2px}
+.alarm-desc{font-size:12px;color:var(--text-dim);line-height:1.5}
+.alarm-time{font-size:11px;color:var(--text-mute);margin-top:4px}
+
+/* 建议卡片 */
+.advice-item{
+  padding:14px 16px;border-radius:8px;background:var(--bg-soft);
+  border:1px solid var(--line);margin-bottom:10px;
+}
+.advice-head{display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap}
+.advice-tag{
+  font-size:11px;padding:2px 8px;border-radius:4px;font-weight:500;
+}
+.tag-save{background:var(--green-dim);color:var(--green)}
+.tag-fix{background:var(--amber-dim);color:var(--amber)}
+tag-warn{background:var(--red-dim);color:var(--red)}
+.advice-title{font-size:13.5px;font-weight:600}
+.advice-desc{font-size:12.5px;color:var(--text-dim);line-height:1.6;margin-bottom:8px}
+.advice-meta{display:flex;gap:16px;font-size:11.5px;color:var(--text-mute);flex-wrap:wrap}
+.advice-meta b{color:var(--cyan);font-weight:600}
+
+/* 表格 */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.table-wrap::-webkit-scrollbar{height:6px}
+.table-wrap::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px}
+table.tbl{
+  width:100%;border-collapse:collapse;font-size:13px;
+}
+table.tbl th{
+  text-align:left;padding:11px 14px;font-weight:500;color:var(--text-dim);
+  background:var(--bg-soft);border-bottom:1px solid var(--line);
+  font-size:12px;white-space:nowrap;
+}
+table.tbl td{
+  padding:12px 14px;border-bottom:1px solid var(--line);white-space:nowrap;
+}
+table.tbl tr:hover td{background:rgba(34,211,238,.03)}
+.pill{
+  display:inline-block;padding:2px 9px;border-radius:10px;font-size:11.5px;font-weight:500;white-space:nowrap;
+}
+.pill-green{background:var(--green-dim);color:var(--green)}
+.pill-amber{background:var(--amber-dim);color:var(--amber)}
+.pill-red{background:var(--red-dim);color:var(--red)}
+.pill-cyan{background:var(--cyan-dim);color:var(--cyan)}
+
+/* 图表容器 */
+.chart{width:100%;height:280px}
+.chart-sm{width:100%;height:220px}
+
+/* 页头 */
+.page-head{margin-bottom:20px}
+.page-head h2{font-size:20px;font-weight:600;margin-bottom:4px}
+.page-head p{font-size:13px;color:var(--text-dim)}
+
+/* 环形数据 */
+.ring-row{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.ring{position:relative;width:110px;height:110px;flex-shrink:0}
+.ring svg{transform:rotate(-90deg)}
+.ring .ring-center{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+}
+.ring .ring-num{font-size:20px;font-weight:700}
+.ring .ring-label{font-size:11px;color:var(--text-dim)}
+
+/* ====== 课表时间轴 ====== */
+.time-bar{
+  background:var(--bg-card);border:1px solid var(--line);border-radius:var(--radius);
+  padding:14px 18px;margin-bottom:16px;
+}
+.time-bar-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.time-label{font-size:12px;color:var(--text-dim);min-width:60px}
+.day-tabs{display:flex;gap:4px;flex-wrap:wrap}
+.day-tab{
+  padding:5px 14px;border-radius:6px;font-size:12.5px;cursor:pointer;
+  color:var(--text-dim);background:var(--bg-soft);border:1px solid transparent;
+  user-select:none;
+}
+.day-tab:hover{color:var(--text)}
+.day-tab.active{background:var(--cyan-dim);color:var(--cyan);border-color:var(--cyan)}
+.period-tabs{display:flex;gap:4px;flex-wrap:wrap}
+.period-tab{
+  padding:5px 10px;border-radius:6px;font-size:12px;cursor:pointer;
+  color:var(--text-dim);background:var(--bg-soft);border:1px solid transparent;
+  user-select:none;line-height:1.3;text-align:center;
+}
+.period-tab:hover{color:var(--text)}
+.period-tab.active{background:var(--cyan-dim);color:var(--cyan);border-color:var(--cyan);font-weight:600}
+.period-tab .p-time{font-size:10px;opacity:.7;display:block}
+.time-summary{margin-left:auto;font-size:12.5px;color:var(--text-dim)}
+.time-summary b{color:var(--cyan);font-weight:600}
+
+/* ====== 工具箱 ====== */
+.tool-card{
+  background:var(--bg-card);border:1px solid var(--line);border-radius:var(--radius);
+  padding:0;overflow:hidden;cursor:pointer;transition:all .2s;
+}
+.tool-card:hover{border-color:var(--cyan);transform:translateY(-2px)}
+.tool-card.active{border-color:var(--cyan);box-shadow:0 0 0 2px rgba(34,211,238,.2)}
+.tool-head{
+  padding:16px 18px;display:flex;align-items:center;gap:12px;
+  border-bottom:1px solid var(--line);
+}
+.tool-icon{
+  width:40px;height:40px;border-radius:10px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+}
+.tool-icon svg{width:20px;height:20px}
+.tool-title{font-size:14.5px;font-weight:600}
+.tool-desc{font-size:12px;color:var(--text-dim);margin-top:2px}
+.tool-body{padding:18px}
+
+/* 上传区 */
+.upload-zone{
+  border:2px dashed var(--line);border-radius:10px;padding:32px 20px;
+  text-align:center;cursor:pointer;transition:all .2s;
+}
+.upload-zone:hover{border-color:var(--cyan);background:var(--cyan-dim)}
+.upload-zone:active{border-color:var(--cyan);background:var(--cyan-dim)}
+.upload-zone svg{width:36px;height:36px;color:var(--text-mute);margin-bottom:8px}
+.upload-zone .u-title{font-size:13.5px;color:var(--text)}
+.upload-zone .u-sub{font-size:12px;color:var(--text-mute);margin-top:4px}
+
+/* 表单 */
+.form-row{display:flex;gap:14px;margin-bottom:12px;align-items:center;flex-wrap:wrap}
+.form-label{font-size:12.5px;color:var(--text-dim);min-width:90px}
+.form-input,.form-select{
+  background:var(--bg-soft);border:1px solid var(--line);border-radius:6px;
+  padding:7px 12px;color:var(--text);font-size:13px;min-width:140px;
+  font-family:inherit;max-width:100%;
+}
+.form-input:focus,.form-select:focus{outline:none;border-color:var(--cyan)}
+.form-unit{font-size:12px;color:var(--text-mute);margin-left:-8px}
+
+/* 结果卡 */
+.result-box{
+  margin-top:14px;padding:16px;border-radius:10px;
+  background:linear-gradient(135deg,rgba(34,211,238,.08),rgba(52,211,153,.05));
+  border:1px solid rgba(34,211,238,.25);
+}
+.result-box .r-title{font-size:13px;font-weight:600;color:var(--cyan);margin-bottom:10px}
+.result-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.result-item{text-align:center;min-width:0}
+.result-item .v{font-size:22px;font-weight:700;color:var(--text)}
+.result-item .v .u{font-size:12px;color:var(--text-dim);font-weight:400}
+.result-item .l{font-size:11.5px;color:var(--text-dim);margin-top:2px}
+
+.btn-primary{
+  background:var(--cyan);color:#0B1220;border:none;padding:8px 18px;border-radius:6px;
+  font-size:13px;cursor:pointer;font-weight:600;font-family:inherit;
+}
+.btn-ghost{
+  background:transparent;color:var(--text-dim);border:1px solid var(--line);
+  padding:8px 18px;border-radius:6px;font-size:13px;cursor:pointer;font-family:inherit;
+}
+
+/* ====== 移动端抽屉遮罩（桌面端隐藏） ====== */
+.sidebar-backdrop{
+  display:none;
+  position:fixed;inset:0;background:rgba(0,0,0,.55);
+  z-index:299;opacity:0;pointer-events:none;
+  transition:opacity .25s ease;
+  -webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);
+}
+.sidebar-backdrop.show{opacity:1;pointer-events:auto}
+
+/* ================= 响应式（仅布局适配，不改任何内容与逻辑） ================= */
+@media (max-width:1200px){
+  .grid-4{grid-template-columns:repeat(2,1fr)}
+  .grid-3{grid-template-columns:repeat(2,1fr)}
+}
+
+/* 平板：内联两栏网格折叠为单栏 */
+@media (max-width:900px){
+  .grid[style*="grid-template-columns"]{grid-template-columns:1fr !important}
+  .tool-panel > div[style*="grid-template-columns"]{grid-template-columns:1fr !important}
+}
+
+/* 手机端 */
+@media (max-width:768px){
+  .menu-btn{display:flex}
+  .topbar{
+    height:auto;min-height:52px;
+    padding:env(safe-area-inset-top, 0px) 12px 0;
+    gap:10px;
+  }
+  .crumb{font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .crumb .sep,.crumb .sub{display:none}
+  .top-search{display:none}
+  .top-clock{font-size:11.5px;line-height:1.25}
+  .top-clock > div:not(.time){display:none}
+  .top-clock .time{font-size:14px}
+  .topbar-right{gap:10px}
+  .avatar{width:30px;height:30px;font-size:12px}
+
+  /* 侧边栏 → 抽屉 */
+  .sidebar{
+    display:flex;
+    position:fixed;top:0;left:0;bottom:0;
+    width:264px;max-width:82vw;
+    height:100vh;height:100dvh;
+    z-index:300;
+    transform:translateX(-100%);
+    transition:transform .26s cubic-bezier(.4,0,.2,1);
+    will-change:transform;
+    box-shadow:6px 0 28px rgba(0,0,0,.5);
+    padding-top:env(safe-area-inset-top, 0px);
+    padding-bottom:env(safe-area-inset-bottom, 0px);
+  }
+  .sidebar.open{transform:translateX(0)}
+  .sidebar-backdrop{display:block}
+
+  /* 内容区 */
+  .content{
+    padding:14px;
+    padding-bottom:calc(20px + env(safe-area-inset-bottom, 0px));
+  }
+  .grid{gap:12px}
+  .grid-4,.grid-3,.grid-2{grid-template-columns:1fr}
+  .card{padding:14px}
+  .card-title{font-size:13.5px;margin-bottom:12px}
+  .card-title .extra{font-size:11.5px;margin-left:0;width:100%}
+
+  /* 跨列修正 */
+  .grid-3 .card[style*="span 2"]{grid-column:auto !important}
+
+  /* KPI */
+  .kpi{padding:14px 16px}
+  .kpi .value{font-size:22px}
+  .kpi .value .unit{font-size:12px}
+  .kpi .label{font-size:12px;margin-bottom:6px}
+  .kpi .delta{font-size:11.5px;margin-top:6px}
+  .kpi .icon{width:32px;height:32px;right:12px;top:12px;border-radius:8px}
+  .kpi .icon svg{width:16px;height:16px}
+
+  /* 页头 */
+  .page-head{margin-bottom:14px}
+  .page-head h2{font-size:18px}
+  .page-head p{font-size:12.5px}
+
+  /* 图表 */
+  .chart{height:220px !important}
+  .chart-sm{height:180px !important}
+
+  /* 教室网格 */
+  .room-grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
+  .room-cell{padding:10px}
+
+  /* 告警 */
+  .alarm-item{padding:10px;gap:10px}
+  .alarm-title{font-size:13px}
+  .alarm-desc{font-size:11.5px}
+  .alarm-item > div[style*="flex-direction:column"]{flex-direction:row !important;flex-wrap:wrap}
+  .alarm-item > div[style*="flex-direction:column"] button{padding:5px 10px !important;font-size:11.5px !important}
+
+  /* 建议 */
+  .advice-item{padding:12px 13px}
+  .advice-head{gap:8px}
+  .advice-title{font-size:13px}
+  .advice-desc{font-size:12px}
+  .advice-head > div[style*="margin-left:auto"]{margin-left:0 !important;width:100%}
+
+  /* 时间轴 */
+  .time-bar{padding:12px 13px}
+  .time-bar-row{gap:8px 10px}
+  .time-label{min-width:auto;font-size:11.5px}
+  .time-label[style*="margin-left:18px"]{margin-left:0 !important}
+  .day-tabs,.period-tabs{width:100%}
+  .day-tab{padding:5px 10px;font-size:12px;flex:1 1 auto;text-align:center}
+  .period-tab{padding:5px 8px;font-size:11.5px;flex:1 1 auto;min-width:calc(33.333% - 4px)}
+  .time-summary{margin-left:0;width:100%;font-size:12px}
+
+  /* 表格横向滚动 */
+  table.tbl{min-width:680px;font-size:12.5px}
+  table.tbl th{padding:10px 12px;font-size:11.5px}
+  table.tbl td{padding:10px 12px}
+
+  /* 表单 16px 防 iOS 聚焦缩放 */
+  .form-input,.form-select{font-size:16px;min-width:120px;padding:8px 12px}
+  .form-label{min-width:auto;font-size:12.5px}
+  .form-row{gap:8px}
+
+  /* 结果区 */
+  .result-box{padding:14px}
+  .result-grid{gap:8px}
+  .result-item .v{font-size:17px}
+  .result-item .v .u{font-size:11px}
+  .result-item .l{font-size:11px}
+
+  /* 环形 */
+  .ring-row{gap:14px}
+  .ring{width:96px;height:96px}
+  .ring svg{width:96px;height:96px}
+
+  /* 工具卡 */
+  .tool-head{padding:14px}
+  .tool-title{font-size:14px}
+  .tool-desc{font-size:11.5px}
+  .upload-zone{padding:26px 16px}
+}
+
+@media (max-width:380px){
+  .content{padding:10px}
+  .card{padding:12px}
+  .kpi{padding:12px 14px}
+  .kpi .value{font-size:20px}
+  .period-tab{min-width:calc(50% - 4px)}
+}
+
+@media (max-height:520px) and (orientation:landscape){
+  .topbar{height:auto;min-height:48px}
+  .content{padding-top:10px}
+  .chart{height:180px !important}
+  .chart-sm{height:150px !important}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- ============ 侧边栏 ============ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L4.5 13.5h6L9.5 22 19 10h-6L13 2z"/></svg>
+      </div>
+      <div class="logo-text">
+        <div class="t1">智慧能耗云</div>
+        <div class="t2">Smart Classroom EMS</div>
+      </div>
+    </div>
+    <nav class="nav">
+      <div class="nav-group">
+        <div class="nav-title">监测总览</div>
+        <div class="nav-item active" data-route="overview">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+          总览大屏
+        </div>
+        <div class="nav-item" data-route="monitor">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+          实时监测
+        </div>
+      </div>
+      <div class="nav-group">
+        <div class="nav-title">智慧分析</div>
+        <div class="nav-item" data-route="predict">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          能耗预测
+        </div>
+        <div class="nav-item" data-route="alarm">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          异常告警
+          <span class="nav-badge">5</span>
+        </div>
+        <div class="nav-item" data-route="advice">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7c.6.5 1 1.4 1 2.3h6c0-.9.4-1.8 1-2.3A7 7 0 0012 2z"/></svg>
+          智能优化建议
+        </div>
+      </div>
+      <div class="nav-group">
+        <div class="nav-title">工具箱</div>
+        <div class="nav-item" data-route="toolbox">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
+          智能工具箱
+        </div>
+      </div>
+      <div class="nav-group">
+        <div class="nav-title">业务管理</div>
+        <div class="nav-item" data-route="report">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          报表中心
+        </div>
+        <div class="nav-item" data-route="manage">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+          基础数据
+        </div>
+      </div>
+    </nav>
+    <div class="sidebar-foot">
+      Spring Boot 3.5 · MyBatis-Plus<br>v0.0.1-SNAPSHOT
+    </div>
+  </aside>
+
+  <!-- 移动端抽屉遮罩 -->
+  <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+
+  <!-- ============ 主区 ============ -->
+  <div class="main">
+    <header class="topbar">
+      <button class="menu-btn" id="menu-btn" type="button" aria-label="打开菜单">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <div class="crumb">
+        <span id="crumbMain">总览大屏</span>
+        <span class="sep">/</span>
+        <span class="sub" id="crumbSub">实时能耗态势</span>
+      </div>
+      <div class="topbar-right">
+        <div class="top-search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          搜索教室 / 设备...
+        </div>
+        <div class="top-clock">
+          <div>2026-10-08 周四</div>
+          <div class="time" id="clock">10:24:36</div>
+        </div>
+        <div class="avatar">后</div>
+      </div>
+    </header>
+
+    <main class="content" id="content">
+<!-- ====== 视图：总览大屏 ====== -->
+<section class="view active" id="view-overview">
+  <div class="grid grid-4" style="margin-bottom:16px">
+    <div class="kpi">
+      <div class="label">今日累计能耗</div>
+      <div class="value mono">1,286.4<span class="unit">kWh</span></div>
+      <div class="delta down">▼ 8.2% 较昨日同期</div>
+      <div class="icon cyan"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L4.5 13.5h6L9.5 22 19 10h-6L13 2z"/></svg></div>
+    </div>
+    <div class="kpi">
+      <div class="label">当前实时功率</div>
+      <div class="value mono">42.7<span class="unit">kW</span></div>
+      <div class="delta up">▲ 3.1% 较昨日此时</div>
+      <div class="icon green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+    </div>
+    <div class="kpi">
+      <div class="label">活跃教室 / 总数</div>
+      <div class="value mono">37<span class="unit">/ 62 间</span></div>
+      <div class="delta down">上课中 28 间 · 空载 9 间</div>
+      <div class="icon purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg></div>
+    </div>
+    <div class="kpi">
+      <div class="label">待处理告警</div>
+      <div class="value mono" style="color:var(--red)">5<span class="unit">条</span></div>
+      <div class="delta up">其中严重 2 条 · 警告 3 条</div>
+      <div class="icon amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg></div>
+    </div>
+  </div>
+
+  <div class="grid" style="grid-template-columns:2fr 1fr;margin-bottom:16px">
+    <div class="card">
+      <div class="card-title">
+        <span class="dot"></span>24 小时能耗趋势（含 AI 预测）
+        <span class="extra">实线=实际 · 虚线=预测</span>
+      </div>
+      <div id="chart-trend" class="chart"></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>能耗构成占比</div>
+      <div id="chart-pie" class="chart"></div>
+    </div>
+  </div>
+
+  <div class="grid" style="grid-template-columns:1.6fr 1fr;margin-bottom:16px">
+    <div class="card">
+      <div class="card-title">
+        <span class="dot"></span>教室实时状态分布
+        <span class="extra">绿=正常 · 黄=偏高 · 红=异常</span>
+      </div>
+      <div class="room-grid" id="room-grid"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">
+        <span class="dot" style="background:var(--red)"></span>最新告警
+        <span class="extra"><a href="#" data-goto="alarm" style="color:var(--cyan);text-decoration:none">查看全部 →</a></span>
+      </div>
+      <div id="alarm-list"></div>
+    </div>
+  </div>
+
+  <div class="grid grid-3">
+    <div class="card" style="grid-column:span 2">
+      <div class="card-title">
+        <span class="dot" style="background:var(--green)"></span>AI 今日节能建议
+        <span class="extra">系统已自动采纳 3 条 · 预计节省 42.6 度电</span>
+      </div>
+      <div id="advice-list"></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>节能完成度</div>
+      <div class="ring-row">
+        <div class="ring">
+          <svg width="110" height="110">
+            <circle cx="55" cy="55" r="46" stroke="#1F2C4A" stroke-width="8" fill="none"/>
+            <circle cx="55" cy="55" r="46" stroke="#22D3EE" stroke-width="8" fill="none"
+              stroke-dasharray="289" stroke-dashoffset="87" stroke-linecap="round"/>
+          </svg>
+          <div class="ring-center">
+            <div class="ring-num mono">70%</div>
+            <div class="ring-label">本周目标</div>
+          </div>
+        </div>
+        <div style="flex:1;min-width:150px">
+          <div style="font-size:12.5px;color:var(--text-dim);margin-bottom:10px">本周累计节省 <b style="color:var(--green);font-size:16px">128.4</b> 度电</div>
+          <div style="font-size:12.5px;color:var(--text-dim);margin-bottom:10px">相当于减少碳排放 <b style="color:var(--cyan)">96.3</b> kg</div>
+          <div style="font-size:12.5px;color:var(--text-dim)">较上周同期 <b style="color:var(--green)">↓ 12.6%</b></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- ====== 视图：实时监测 ====== -->
+<section class="view" id="view-monitor">
+  <div class="page-head">
+    <h2>实时监测</h2>
+    <p>全校 62 间教室 · 支持按日期与节次回溯任意时段的用能状态</p>
+  </div>
+  <div class="time-bar">
+    <div class="time-bar-row">
+      <span class="time-label">查看日期</span>
+      <div class="day-tabs" id="day-tabs">
+        <div class="day-tab" data-day="10-06">周一</div>
+        <div class="day-tab" data-day="10-07">周二</div>
+        <div class="day-tab active" data-day="10-08">周三（今天）</div>
+        <div class="day-tab" data-day="10-09">周四</div>
+        <div class="day-tab" data-day="10-10">周五</div>
+      </div>
+      <span class="time-label" style="margin-left:18px">节次</span>
+      <div class="period-tabs" id="period-tabs"></div>
+      <div class="time-summary" id="time-summary"></div>
+    </div>
+  </div>
+  <div class="grid grid-4" style="margin-bottom:16px">
+    <div class="kpi"><div class="label">在线设备</div><div class="value mono" style="color:var(--green)">312<span class="unit">/348</span></div><div class="delta down">在线率 89.7%</div></div>
+    <div class="kpi"><div class="label">运行中设备</div><div class="value mono" id="kpi-running">218<span class="unit">台</span></div><div class="delta up" id="kpi-running-desc">空调 86 · 照明 92 · 投影 40</div></div>
+    <div class="kpi"><div class="label">故障设备</div><div class="value mono" style="color:var(--amber)">6<span class="unit">台</span></div><div class="delta up">2 台已报修</div></div>
+    <div class="kpi"><div class="label">当前总功率</div><div class="value mono" id="kpi-power">42.7<span class="unit">kW</span></div><div class="delta down" id="kpi-power-desc">负载率 63%</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">
+      <span class="dot"></span>教室设备明细
+      <span class="extra" id="monitor-extra">当前节次：第 3-4 节 · 每 30 秒自动刷新</span>
+    </div>
+    <div class="table-wrap">
+      <table class="tbl">
+        <colgroup><col style="width:11%"><col style="width:13%"><col style="width:9%"><col style="width:12%"><col style="width:12%"><col style="width:18%"><col style="width:10%"><col style="width:15%"></colgroup>
+        <thead><tr><th>教室编号</th><th>所属楼栋</th><th>类型</th><th>当前功率</th><th>当日累计</th><th>课程安排</th><th>空调温度</th><th>状态</th></tr></thead>
+        <tbody id="monitor-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ====== 视图：能耗预测 ====== -->
+<section class="view" id="view-predict">
+  <div class="page-head">
+    <h2>能耗预测</h2>
+    <p>基于过去 30 天历史数据 · 加权移动平均模型 · 预测未来 7 天全校能耗</p>
+  </div>
+  <div class="grid grid-4" style="margin-bottom:16px">
+    <div class="kpi"><div class="label">明日预测能耗</div><div class="value mono">1,352<span class="unit">kWh</span></div><div class="delta up">较今日 ↑ 5.1%</div></div>
+    <div class="kpi"><div class="label">下周预测总能耗</div><div class="value mono">8,940<span class="unit">kWh</span></div><div class="delta up">含周末降班</div></div>
+    <div class="kpi"><div class="label">预测模型准确率</div><div class="value mono" style="color:var(--green)">94.2<span class="unit">%</span></div><div class="delta down">近 14 天 MAE 校验</div></div>
+    <div class="kpi"><div class="label">建议预算（下周）</div><div class="value mono">¥ 6,258</div><div class="delta up">电价 0.70 元/度</div></div>
+  </div>
+  <div class="grid" style="grid-template-columns:1.6fr 1fr;margin-bottom:16px">
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>近 7 天实际 + 未来 7 天预测</div>
+      <div id="chart-predict" class="chart" style="height:340px"></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>预测依据</div>
+      <div style="font-size:13px;color:var(--text-dim);line-height:1.9">
+        <p style="margin-bottom:10px"><b style="color:var(--text)">输入特征：</b>历史能耗、课程表密度、天气温度、星期类型</p>
+        <p style="margin-bottom:10px"><b style="color:var(--text)">算法模型：</b>加权移动平均（近 7 天权重 0.6，8~30 天权重 0.4）</p>
+        <p style="margin-bottom:10px"><b style="color:var(--text)">修正因子：</b>明日气温 26~31°C，空调负荷系数 ×1.15</p>
+        <p><b style="color:var(--text)">置信区间：</b>±8.5%（95% 置信水平）</p>
+      </div>
+      <div style="margin-top:16px;padding:12px;background:var(--cyan-dim);border-radius:8px;font-size:12.5px;color:var(--cyan)">
+        系统建议：下周三全校能耗预计上升 15%，请提前与教务部门确认课程安排是否合理。
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>分教室预测明细（未来 3 天）</div>
+    <div class="table-wrap">
+      <table class="tbl">
+        <colgroup><col style="width:18%"><col style="width:20%"><col style="width:20%"><col style="width:20%"><col style="width:22%"></colgroup>
+        <thead><tr><th>教室</th><th>明日预测（kWh）</th><th>后日预测（kWh）</th><th>大后日预测（kWh）</th><th>趋势判断</th></tr></thead>
+        <tbody id="predict-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ====== 视图：异常告警 ====== -->
+<section class="view" id="view-alarm">
+  <div class="page-head">
+    <h2>异常告警</h2>
+    <p>系统自动识别三类异常：无人用能 · 能耗突变 · 夜间未关设备</p>
+  </div>
+  <div class="grid grid-4" style="margin-bottom:16px">
+    <div class="kpi"><div class="label">未处理 · 严重</div><div class="value mono" style="color:var(--red)">2<span class="unit">条</span></div></div>
+    <div class="kpi"><div class="label">未处理 · 警告</div><div class="value mono" style="color:var(--amber)">3<span class="unit">条</span></div></div>
+    <div class="kpi"><div class="label">今日已处理</div><div class="value mono" style="color:var(--green)">14<span class="unit">条</span></div></div>
+    <div class="kpi"><div class="label">本周误报率</div><div class="value mono">2.1<span class="unit">%</span></div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">
+      <span class="dot" style="background:var(--red)"></span>告警记录
+      <span class="extra">按时间倒序 · 共 5 条未处理</span>
+    </div>
+    <div id="alarm-full-list"></div>
+  </div>
+</section>
+
+<!-- ====== 视图：智能建议 ====== -->
+<section class="view" id="view-advice">
+  <div class="page-head">
+    <h2>智能优化建议</h2>
+    <p>基于预测结果与异常检测 · 系统每日 06:00 自动生成 · 今日已采纳 3 条</p>
+  </div>
+  <div class="grid" style="grid-template-columns:1.4fr 1fr">
+    <div>
+      <div class="card">
+        <div class="card-title"><span class="dot" style="background:var(--green)"></span>今日建议（5 条）</div>
+        <div id="advice-full-list"></div>
+      </div>
+    </div>
+    <div>
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-title"><span class="dot"></span>本周优化成效</div>
+        <div id="chart-advice-effect" class="chart-sm"></div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="dot"></span>采纳率统计</div>
+        <div style="font-size:13px;color:var(--text-dim);line-height:2">
+          <div>已采纳建议 <b style="color:var(--text);font-size:18px">23</b> 条</div>
+          <div>管理员忽略 <b style="color:var(--text)">7</b> 条</div>
+          <div>建议采纳率 <b style="color:var(--green);font-size:18px">76.7%</b></div>
+          <div>通过建议节省电量 <b style="color:var(--cyan);font-size:18px">486.2</b> 度</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ====== 视图：智能工具箱 ====== -->
+<section class="view" id="view-toolbox">
+  <div class="page-head">
+    <h2>智能工具箱</h2>
+    <p>面向后勤老师的小工具集合 · 拍一拍、算一算，节能建议马上出</p>
+  </div>
+  <div class="grid grid-3" style="margin-bottom:16px">
+    <div class="tool-card active" data-tool="sticker">
+      <div class="tool-head">
+        <div class="tool-icon cyan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
+        <div>
+          <div class="tool-title">能耗贴纸识别</div>
+          <div class="tool-desc">拍空调能效标 → 自动出推荐温度与风速</div>
+        </div>
+      </div>
+    </div>
+    <div class="tool-card" data-tool="calc">
+      <div class="tool-head">
+        <div class="tool-icon green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="16" y1="14" x2="16.01" y2="14"/><line x1="8" y1="14" x2="8.01" y2="14"/><line x1="10" y1="10" x2="8.01" y2="10"/><line x1="16" y1="10" x2="16.01" y2="10"/><line x1="12" y1="10" x2="12.01" y2="10"/></svg></div>
+        <div>
+          <div class="tool-title">电费速算器</div>
+          <div class="tool-desc">输入功率与时长 · 算单日/学期电费与节省</div>
+        </div>
+      </div>
+    </div>
+    <div class="tool-card" data-tool="check">
+      <div class="tool-head">
+        <div class="tool-icon amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+        <div>
+          <div class="tool-title">教室节能体检</div>
+          <div class="tool-desc">选一间教室 · 一键检查设备设置是否合理</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 工具1：能耗贴纸识别 -->
+  <div class="card tool-panel" id="panel-sticker">
+    <div class="card-title"><span class="dot"></span>能耗贴纸识别</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+      <div>
+        <div class="upload-zone" id="upload-zone">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          <div class="u-title">点击上传 / 拍摄能耗贴纸</div>
+          <div class="u-sub">支持 JPG / PNG · 自动识别能效等级、制冷量、功率</div>
+        </div>
+        <div id="sticker-result" style="display:none;margin-top:14px">
+          <div style="font-size:12.5px;color:var(--text-dim);margin-bottom:8px">已识别设备参数（可手动修改）：</div>
+          <div class="form-row"><span class="form-label">设备类型</span>
+            <select class="form-select"><option>挂壁式空调</option><option>柜式空调</option><option>嵌入式空调</option><option>投影仪</option><option>LED 灯</option></select></div>
+          <div class="form-row"><span class="form-label">能效等级</span>
+            <select class="form-select"><option>1 级（最节能）</option><option selected>2 级</option><option>3 级</option><option>4 级</option><option>5 级</option></select></div>
+          <div class="form-row"><span class="form-label">制冷量</span>
+            <input class="form-input" value="3500"><span class="form-unit">W</span></div>
+          <div class="form-row"><span class="form-label">输入功率</span>
+            <input class="form-input" value="1080"><span class="form-unit">W</span></div>
+          <div class="form-row"><span class="form-label">今日室外温度</span>
+            <input class="form-input" value="31"><span class="form-unit">°C</span></div>
+          <div class="form-row"><span class="form-label">房间面积</span>
+            <input class="form-input" value="45"><span class="form-unit">m²</span></div>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:12.5px;color:var(--text-dim);margin-bottom:10px">AI 推荐设置：</div>
+        <div class="result-box">
+          <div class="r-title">基于当前工况的最优节能方案</div>
+          <div class="result-grid">
+            <div class="result-item"><div class="v">26<span class="u">°C</span></div><div class="l">推荐温度</div></div>
+            <div class="result-item"><div class="v">中速</div><div class="l">推荐风速</div></div>
+            <div class="result-item"><div class="v">26<span class="u">°C</span></div><div class="l">相对湿度</div></div>
+          </div>
+          <div style="margin-top:14px;padding-top:12px;border-top:1px dashed var(--line);font-size:12.5px;color:var(--text-dim);line-height:1.7">
+            <b style="color:var(--text)">节能说明：</b>当前室外 31°C，制冷负荷中等。建议设定 26°C（国家推荐节能温度）、中速风、风向水平向上；相比 24°C 低温运行，每小时可省电约 0.42 度，单教室一学期预计节省 <b style="color:var(--green)">126 元</b>。
+          </div>
+          <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn-primary">采纳并下发至教室</button>
+            <button class="btn-ghost">保存为设备档案</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 工具2：电费速算器 -->
+  <div class="card tool-panel" id="panel-calc" style="display:none">
+    <div class="card-title"><span class="dot"></span>电费速算器</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+      <div>
+        <div class="form-row"><span class="form-label">设备功率</span>
+          <input class="form-input" id="calc-power" value="1500"><span class="form-unit">W</span></div>
+        <div class="form-row"><span class="form-label">每日使用时长</span>
+          <input class="form-input" id="calc-hours" value="10"><span class="form-unit">小时/天</span></div>
+        <div class="form-row"><span class="form-label">使用天数</span>
+          <input class="form-input" id="calc-days" value="120"><span class="form-unit">天/学期</span></div>
+        <div class="form-row"><span class="form-label">电价</span>
+          <input class="form-input" id="calc-price" value="0.70"><span class="form-unit">元/度</span></div>
+        <div class="form-row"><span class="form-label">拟节能模式</span>
+          <select class="form-select" id="calc-mode">
+            <option value="0.85">节能模式（功率降 15%）</option>
+            <option value="0.75">高效节能（功率降 25%）</option>
+            <option value="1">不开启节能</option>
+          </select></div>
+        <button class="btn-primary" id="calc-btn" style="margin-top:6px">立即计算</button>
+      </div>
+      <div>
+        <div class="result-box" id="calc-result">
+          <div class="r-title">计算结果</div>
+          <div class="result-grid">
+            <div class="result-item"><div class="v" id="r-daily">15.0<span class="u">度</span></div><div class="l">单日用电</div></div>
+            <div class="result-item"><div class="v" id="r-semester">1,800<span class="u">度</span></div><div class="l">学期用电</div></div>
+            <div class="result-item"><div class="v" id="r-cost">¥1,260</div><div class="l">学期电费</div></div>
+          </div>
+          <div style="margin-top:14px;padding-top:12px;border-top:1px dashed var(--line);font-size:12.5px;color:var(--text-dim);line-height:1.7">
+            开启节能模式后：学期耗电 <b id="r-save-kwh" style="color:var(--green)">1,530 度</b>，
+            节省电费 <b id="r-save-money" style="color:var(--green)">¥189.0</b>。
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 工具3：教室节能体检 -->
+  <div class="card tool-panel" id="panel-check" style="display:none">
+    <div class="card-title"><span class="dot"></span>教室节能体检</div>
+    <div style="margin-bottom:14px;display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+      <span style="font-size:12.5px;color:var(--text-dim)">选择教室：</span>
+      <select class="form-select" id="check-room">
+        <option value="1-201">1-201 多媒体</option>
+        <option value="1-202">1-202 实验室</option>
+        <option value="3-501">3-501 智慧教室</option>
+        <option value="3-502">3-502 智慧教室</option>
+      </select>
+      <button class="btn-primary" id="check-btn">开始体检</button>
+    </div>
+    <div id="check-result"></div>
+  </div>
+</section>
+
+<!-- ====== 视图：报表中心 ====== -->
+<section class="view" id="view-report">
+  <div class="page-head">
+    <h2>报表中心</h2>
+    <p>日 / 周 / 月能耗报表 · 支持 Excel 导出</p>
+  </div>
+  <div class="card">
+    <div class="card-title">
+      <span class="dot"></span>最近 7 天能耗统计
+      <span class="extra"><button style="background:var(--cyan);color:#0B1220;border:none;padding:6px 14px;border-radius:6px;font-size:12.5px;cursor:pointer;font-weight:600;font-family:inherit">导出 Excel</button></span>
+    </div>
+    <div class="table-wrap">
+      <table class="tbl">
+        <colgroup><col style="width:16%"><col style="width:14%"><col style="width:14%"><col style="width:14%"><col style="width:14%"><col style="width:14%"><col style="width:14%"></colgroup>
+        <thead><tr><th>日期</th><th>总能耗（kWh）</th><th>空调能耗</th><th>照明能耗</th><th>教学设备</th><th>费用（元）</th><th>环比</th></tr></thead>
+        <tbody id="report-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ====== 视图：基础数据 ====== -->
+<section class="view" id="view-manage">
+  <div class="page-head">
+    <h2>基础数据管理</h2>
+    <p>教室档案 · 设备台账 · 课程表维护</p>
+  </div>
+  <div class="card">
+    <div class="card-title">
+      <span class="dot"></span>教室档案列表
+      <span class="extra"><button style="background:var(--cyan);color:#0B1220;border:none;padding:6px 14px;border-radius:6px;font-size:12.5px;cursor:pointer;font-weight:600;font-family:inherit">+ 新增教室</button></span>
+    </div>
+    <div class="table-wrap">
+      <table class="tbl">
+        <colgroup><col style="width:12%"><col style="width:16%"><col style="width:12%"><col style="width:12%"><col style="width:14%"><col style="width:14%"><col style="width:20%"></colgroup>
+        <thead><tr><th>教室编号</th><th>教室名称</th><th>楼栋</th><th>容量</th><th>空调台数</th><th>当前状态</th><th>备注</th></tr></thead>
+        <tbody id="manage-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+<!-- PLACEHOLDER_VIEWS -->
+    </main>
+  </div>
+</div>
+<script>
+/* ============ 节次定义 ============ */
+const PERIODS = [
+  {key:'p12',name:'第1-2节',time:'08:00-09:40'},
+  {key:'p34',name:'第3-4节',time:'10:00-11:40'},
+  {key:'p56',name:'第5-6节',time:'14:00-15:40'},
+  {key:'p78',name:'第7-8节',time:'16:00-17:40'},
+  {key:'p910',name:'第9-10节',time:'19:00-20:40'},
+];
+
+/* ============ 教室基础档案 ============ */
+const ROOMS = [
+  {no:'1-101',bld:'1号教学楼',type:'多媒体',baseP:3.2,temp:25},
+  {no:'1-102',bld:'1号教学楼',type:'普通',  baseP:1.8,temp:0},
+  {no:'1-201',bld:'1号教学楼',type:'多媒体',baseP:5.4,temp:24},
+  {no:'1-202',bld:'1号教学楼',type:'实验室',baseP:8.6,temp:23},
+  {no:'2-301',bld:'2号教学楼',type:'多媒体',baseP:4.1,temp:26},
+  {no:'2-302',bld:'2号教学楼',type:'普通',  baseP:0.4,temp:0},
+  {no:'2-401',bld:'2号教学楼',type:'多媒体',baseP:6.2,temp:25},
+  {no:'3-501',bld:'3号教学楼',type:'智慧教室',baseP:7.8,temp:24},
+  {no:'3-502',bld:'3号教学楼',type:'智慧教室',baseP:0.0,temp:0},
+  {no:'3-503',bld:'3号教学楼',type:'普通',  baseP:2.1,temp:0},
+  {no:'4-601',bld:'4号教学楼',type:'多媒体',baseP:3.8,temp:25},
+  {no:'4-602',bld:'4号教学楼',type:'实验室',baseP:5.2,temp:26},
+];
+
+/* ============ 完整课表：[day][period][roomNo] = 课程名或 null ============ */
+/* 周一 10-06 / 周二 10-07 / 周三 10-08(今天) / 周四 10-09 / 周五 10-10 */
+const SCHEDULE = {
+  '10-06':{
+    p12:{'1-101':'高等数学','1-201':'大学物理','2-301':'大学英语','3-501':'程序设计','4-601':'数据库原理'},
+    p34:{'1-102':'线性代数','1-202':'C语言实验','2-401':'操作系统','3-502':'软件工程','4-602':'计算机网络'},
+    p56:{'1-101':'高等数学','2-301':'大学英语','3-501':'程序设计'},
+    p78:{'1-201':'大学物理','2-401':'操作系统','4-601':'数据库原理'},
+    p910:{'3-501':'程序设计实验'},
+  },
+  '10-07':{
+    p12:{'1-101':'高等数学','1-201':'大学物理','2-301':'大学英语','3-501':'数据结构','4-601':'数据库原理'},
+    p34:{'1-102':'概率统计','1-202':'Java实验','2-401':'计算机组成','3-502':'软件工程','4-602':'网络安全'},
+    p56:{'1-101':'高等数学','2-301':'大学英语','3-501':'数据结构'},
+    p78:{'1-201':'大学物理','2-401':'计算机组成','4-601':'数据库原理'},
+    p910:{'3-502':'软件工程课程设计'},
+  },
+  '10-08':{ /* 今天 */
+    p12:{'1-101':'高等数学','1-201':'大学物理','2-301':'大学英语','3-501':'软件工程','4-601':'数据库原理'},
+    p34:{'1-102':'离散数学','1-202':'程序设计实验','2-401':'操作系统','3-502':'人工智能导论','4-602':'计算机网络'},
+    p56:{'1-101':'高等数学','2-301':'大学英语','3-501':'软件工程'},
+    p78:{'1-201':'大学物理','2-401':'操作系统','4-601':'数据库原理'},
+    p910:{'3-501':'人工智能实验','3-502':'软件工程研讨'},
+  },
+  '10-09':{
+    p12:{'1-101':'高等数学','1-201':'大学物理','2-301':'大学英语','3-501':'数据结构','4-601':'数据库原理'},
+    p34:{'1-102':'近世代数','1-202':'Python实验','2-401':'编译原理','3-502':'人机交互','4-602':'分布式系统'},
+    p56:{'1-101':'高等数学','2-301':'大学英语','3-501':'数据结构'},
+    p78:{'1-201':'大学物理','2-401':'编译原理','4-601':'数据库原理'},
+    p910:{'3-501':'数据结构实验'},
+  },
+  '10-10':{
+    p12:{'1-101':'高等数学','1-201':'大学物理','2-301':'大学英语','3-501':'算法设计','4-601':'数据库原理'},
+    p34:{'1-102':'复变函数','1-202':'Web开发实验','2-401':'软件测试','3-502':'项目管理','4-602':'云计算'},
+    p56:{'1-101':'高等数学','2-301':'大学英语','3-501':'算法设计'},
+    p78:{'1-201':'大学物理','2-401':'软件测试','4-601':'数据库原理'},
+    p910:{},
+  },
+};
+
+/* 当前时间轴状态 */
+const TIME_STATE = {day:'10-08', period:'p34'};
+
+/* ============ 告警数据（累积式，resolved=true 表示已处理） ============ */
+const ALARMS = [
+  {id:1,sev:'high',title:'3-502 教室夜间未关空调',desc:'课程已于昨日 21:30 结束，空调持续运行至今日早晨，预计浪费电量 12.6 度',time:'今日 08:12 触发',loc:'3号教学楼 502',resolved:false},
+  {id:2,sev:'high',title:'1-202 实验室能耗突增',desc:'当前功率 8.6kW，较同期历史均值 3.1kW 高出 177%，疑似设备故障',time:'今日 10:05 触发',loc:'1号教学楼 202',resolved:false},
+  {id:3,sev:'mid',title:'1-201 教室空调温度过低',desc:'当前设定 24°C，室外气温 31°C，建议调高至 26°C 以节能',time:'今日 08:30 触发',loc:'1号教学楼 201',resolved:false},
+  {id:4,sev:'mid',title:'2-401 教室照明空载运行',desc:'第 3-4 节无排课，但 6 组照明仍处于开启状态',time:'今日 10:15 触发',loc:'2号教学楼 401',resolved:false},
+  {id:5,sev:'low',title:'4-602 实验室投影待机时间过长',desc:'投影已待机 3 小时未关闭，建议远程断电',time:'今日 09:40 触发',loc:'4号教学楼 602',resolved:false},
+  {id:6,sev:'mid',title:'1-101 教室空调风速过高',desc:'设定为强风，建议调为中风以降噪节能',time:'昨日 14:20 触发',loc:'1号教学楼 101',resolved:true},
+  {id:7,sev:'low',title:'3-503 教室窗帘未闭合',desc:'下午阳光直射，空调负荷增大',time:'昨日 16:45 触发',loc:'3号教学楼 503',resolved:true},
+];
+
+const ADVICE = [
+  {tag:'save',tagText:'节能建议',title:'空调温度统一上调 2°C',desc:'今日全天多云，室外最高 31°C。全校 28 间正在上课的教室空调均设定在 24~25°C，建议统一上调至 26°C，每台空调每小时可节省约 0.8 度电。',meta:{expected:'预计节省 68.4 度/天',adopt:'采纳率 82%'}},
+  {tag:'fix',tagText:'故障排查',title:'1-202 实验室疑似设备故障',desc:'当前功率异常偏高（8.6kW vs 历史均值 3.1kW），建议后勤老师现场排查空调或投影仪是否故障。',meta:{expected:'预计修复后降本 20 度/天',adopt:'采纳率 95%'}},
+  {tag:'save',tagText:'排班优化',title:'合并相邻教室课程',desc:'2-302 教室当前空载运行但仍有照明开启，建议将下午第 5-6 节小班课合并至 2-301，关闭 2-302 全部设备。',meta:{expected:'预计节省 8.2 度/天',adopt:'采纳率 64%'}},
+  {tag:'save',tagText:'节能建议',title:'夜间自动断电策略',desc:'系统已开启 22:00 后无人教室自动断电策略，覆盖 47 间教室。建议补充：3 号教学楼 5 层走廊感应灯也纳入夜间管控。',meta:{expected:'预计节省 12.6 度/周',adopt:'采纳率 71%'}},
+  {tag:'warn',tagText:'预算提醒',title:'下周能耗预计上升 15%',desc:'根据课程表与气温预测，下周三、周四为课程高峰，全校能耗预计达 1,480 度/日，建议提前与财务确认电费预算。',meta:{expected:'超支风险预警',adopt:'采纳率 —'}},
+];
+
+const PREDICT_ROWS = [
+  {room:'1-101 多媒体',tomorrow:52.3,day2:48.6,day3:55.1,trend:'平稳'},
+  {room:'1-202 实验室',tomorrow:132.5,day2:118.2,day3:98.4,trend:'下降'},
+  {room:'3-501 智慧教室',tomorrow:121.8,day2:135.2,day3:142.6,trend:'上升'},
+  {room:'3-502 智慧教室',tomorrow:108.4,day2:112.7,day3:115.3,trend:'上升'},
+  {room:'2-301 多媒体',tomorrow:68.9,day2:65.4,day3:72.1,trend:'平稳'},
+];
+
+const REPORTS = [
+  {d:'10-02 周四',e:1342.6,ac:682.4,light:312.8,teach:347.4,cost:939.82,chg:'-3.2%',down:true},
+  {d:'10-03 周五',e:1428.1,ac:725.6,light:338.2,teach:364.3,cost:999.67,chg:'+6.4%',down:false},
+  {d:'10-04 周六',e:684.2,ac:312.8,light:158.4,teach:213.0,cost:478.94,chg:'-52.1%',down:true},
+  {d:'10-05 周日',e:512.8,ac:228.4,light:126.2,teach:158.2,cost:358.96,chg:'-25.1%',down:true},
+  {d:'10-06 周一',e:1486.3,ac:752.1,light:356.8,teach:377.4,cost:1040.41,chg:'+189.8%',down:false},
+  {d:'10-07 周二',e:1398.5,ac:708.2,light:332.6,teach:357.7,cost:978.95,chg:'-5.9%',down:true},
+  {d:'10-08 周三',e:1286.4,ac:654.7,light:308.2,teach:323.5,cost:900.48,chg:'-8.0%',down:true},
+];
+
+/* ============ 路由 ============ */
+const ROUTES = {
+  overview:{main:'总览大屏',sub:'实时能耗态势'},
+  monitor:{main:'实时监测',sub:'设备运行状态'},
+  predict:{main:'能耗预测',sub:'AI 预测模型'},
+  alarm:{main:'异常告警',sub:'智能异常识别'},
+  advice:{main:'智能优化建议',sub:'节能策略推荐'},
+  report:{main:'报表中心',sub:'能耗数据统计'},
+  toolbox:{main:'智能工具箱',sub:'便捷小工具集合'},
+  manage:{main:'基础数据',sub:'教室与设备档案'},
+};
+function go(route){
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active',n.dataset.route===route));
+  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+route));
+  document.getElementById('crumbMain').textContent = ROUTES[route].main;
+  document.getElementById('crumbSub').textContent = ROUTES[route].sub;
+  window.scrollTo(0,0);
+  document.getElementById('content').scrollTop = 0;
+  if(window.closeSidebar) window.closeSidebar();
+  if(route==='predict' && !window._predictInited){initPredictChart();window._predictInited=true;}
+  if(route==='advice' && !window._adviceInited){initAdviceChart();window._adviceInited=true;}
+  setTimeout(()=>{
+    if(window._charts) window._charts.forEach(c=>c && c.resize && c.resize());
+  }, 60);
+}
+document.querySelectorAll('.nav-item').forEach(n=>n.addEventListener('click',()=>go(n.dataset.route)));
+document.querySelectorAll('[data-goto]').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();go(a.dataset.goto)}));
+
+/* ============ 时钟 ============ */
+setInterval(()=>{
+  const d=new Date();
+  const p=n=>String(n).padStart(2,'0');
+  document.getElementById('clock').textContent=`${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+},1000);
+
+/* ============ 计算某时段某教室的实时状态 ============ */
+function getRoomSnapshot(room){
+  const course = (SCHEDULE[TIME_STATE.day] && SCHEDULE[TIME_STATE.day][TIME_STATE.period] && SCHEDULE[TIME_STATE.day][TIME_STATE.period][room.no]) || null;
+  let p = room.baseP * 0.15; // 基础待机功率
+  let st = 'normal';
+  let courseText = '空闲';
+  let temp = 0;
+  if(course){
+    p = room.baseP;
+    courseText = course;
+    temp = room.temp;
+    // 异常条件：空调温度过低
+    if(room.temp && room.temp <= 24) st = 'warn';
+    // 1-202 故障
+    if(room.no === '1-202') st = 'error';
+  } else {
+    // 无课但设备仍高功率（模拟空载）
+    if(['2-401','3-502'].includes(room.no)){
+      p = room.baseP * 0.85;
+      courseText = '空闲但设备未关';
+      st = room.no === '3-502' ? 'error' : 'warn';
+      temp = room.temp || 26;
+    }
+  }
+  return {p, st, course:courseText, temp};
+}
+
+/* ============ 渲染：节次 tabs ============ */
+(function(){
+  const el = document.getElementById('period-tabs');
+  el.innerHTML = PERIODS.map(p=>`
+    <div class="period-tab ${p.key===TIME_STATE.period?'active':''}" data-period="${p.key}">
+      ${p.name}<span class="p-time">${p.time}</span>
+    </div>`).join('');
+  el.querySelectorAll('.period-tab').forEach(t=>{
+    t.addEventListener('click',()=>{
+      TIME_STATE.period = t.dataset.period;
+      el.querySelectorAll('.period-tab').forEach(x=>x.classList.toggle('active',x.dataset.period===TIME_STATE.period));
+      renderMonitor();
+      renderOverviewRooms();
+    });
+  });
+  const dayEl = document.getElementById('day-tabs');
+  dayEl.querySelectorAll('.day-tab').forEach(t=>{
+    t.addEventListener('click',()=>{
+      TIME_STATE.day = t.dataset.day;
+      dayEl.querySelectorAll('.day-tab').forEach(x=>x.classList.toggle('active',x.dataset.day===TIME_STATE.day));
+      renderMonitor();
+      renderOverviewRooms();
+    });
+  });
+})();
+
+/* ============ 渲染：监测表格（随时间轴联动） ============ */
+function renderMonitor(){
+  const periodObj = PERIODS.find(p=>p.key===TIME_STATE.period);
+  document.getElementById('time-summary').innerHTML =
+    `当前查看：<b>${TIME_STATE.day}</b> · <b>${periodObj.name}</b>（${periodObj.time}）`;
+  document.getElementById('monitor-extra').textContent = `当前节次：${periodObj.name} · 数据已联动课表`;
+
+  let totalP = 0, running = 0;
+  const rows = ROOMS.map(r=>{
+    const snap = getRoomSnapshot(r);
+    totalP += snap.p;
+    if(snap.p > 0.5) running++;
+    const stPill = snap.st==='error'?'<span class="pill pill-red">异常</span>':
+                   snap.st==='warn'?'<span class="pill pill-amber">偏高</span>':
+                   '<span class="pill pill-green">正常</span>';
+    return `<tr>
+      <td class="mono">${r.no}</td><td>${r.bld}</td><td>${r.type}</td>
+      <td class="mono">${snap.p.toFixed(1)} kW</td>
+      <td class="mono">${(snap.p*1.5).toFixed(1)} kWh</td>
+      <td>${snap.course}</td>
+      <td>${snap.temp?snap.temp+'°C':'—'}</td>
+      <td>${stPill}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('monitor-tbody').innerHTML = rows;
+  document.getElementById('kpi-running').innerHTML = `${running}<span class="unit">台</span>`;
+  document.getElementById('kpi-power').innerHTML = `${totalP.toFixed(1)}<span class="unit">kW</span>`;
+  document.getElementById('kpi-power-desc').textContent = '负载率 ' + Math.round(totalP/70*100) + '%';
+}
+
+/* ============ 渲染：首页教室网格（随时间轴联动） ============ */
+function renderOverviewRooms(){
+  const el = document.getElementById('room-grid');
+  if(!el) return;
+  el.innerHTML = ROOMS.map(r=>{
+    const snap = getRoomSnapshot(r);
+    const pct = Math.min(100, snap.p/10*100);
+    const color = snap.st==='error'?'var(--red)':snap.st==='warn'?'var(--amber)':'var(--green)';
+    return `<div class="room-cell">
+      <div class="r-name"><span>${r.no}</span><span class="status-dot st-${snap.st}"></span></div>
+      <div class="r-power"><span class="num mono">${snap.p.toFixed(1)}</span> kW · ${snap.course}</div>
+      <div class="room-bar"><i style="width:${pct}%;background:${color}"></i></div>
+    </div>`;
+  }).join('');
+}
+renderOverviewRooms();
+renderMonitor();
+
+/* ============ 渲染：告警列表（首页） ============ */
+function renderAlarmHome(){
+  const el=document.getElementById('alarm-list');
+  const pending = ALARMS.filter(a=>!a.resolved);
+  el.innerHTML = pending.slice(0,4).map(a=>`
+    <div class="alarm-item sev-${a.sev}">
+      <div class="alarm-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      </div>
+      <div class="alarm-body">
+        <div class="alarm-title">${a.title}</div>
+        <div class="alarm-desc">${a.desc}</div>
+        <div class="alarm-time">${a.time} · ${a.loc}</div>
+      </div>
+    </div>`).join('');
+}
+renderAlarmHome();
+
+/* ============ 渲染：建议列表（首页） ============ */
+(function(){
+  const el=document.getElementById('advice-list');
+  el.innerHTML = ADVICE.slice(0,3).map(a=>`
+    <div class="advice-item">
+      <div class="advice-head">
+        <span class="advice-tag tag-${a.tag}">${a.tagText}</span>
+        <span class="advice-title">${a.title}</span>
+      </div>
+      <div class="advice-desc">${a.desc}</div>
+      <div class="advice-meta"><span>${a.meta.expected}</span><span>采纳率：<b>${a.meta.adopt}</b></span></div>
+    </div>`).join('');
+})();
+
+/* ============ 渲染：预测表格 ============ */
+(function(){
+  const el=document.getElementById('predict-tbody');
+  el.innerHTML = PREDICT_ROWS.map(r=>{
+    const pill = r.trend==='上升'?'<span class="pill pill-red">↑ 上升</span>':
+                 r.trend==='下降'?'<span class="pill pill-green">↓ 下降</span>':
+                 '<span class="pill pill-cyan">— 平稳</span>';
+    return `<tr><td>${r.room}</td><td class="mono">${r.tomorrow.toFixed(1)}</td>
+    <td class="mono">${r.day2.toFixed(1)}</td><td class="mono">${r.day3.toFixed(1)}</td><td>${pill}</td></tr>`;
+  }).join('');
+})();
+
+/* ============ 渲染：完整告警列表（累积式，处理过不消失） ============ */
+function renderAlarmFull(){
+  const el=document.getElementById('alarm-full-list');
+  el.innerHTML = ALARMS.map(a=>{
+    const done = a.resolved;
+    return `<div class="alarm-item sev-${a.sev}" style="${done?'opacity:.55;filter:grayscale(.4)':''}">
+      <div class="alarm-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      </div>
+      <div class="alarm-body">
+        <div class="alarm-title">${a.title} ${done?'<span class="pill pill-green" style="margin-left:6px">已处理</span>':''}</div>
+        <div class="alarm-desc">${a.desc}</div>
+        <div class="alarm-time">${a.time} · ${a.loc}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
+        <button ${done?'disabled':''} data-alarm-ok="${a.id}" style="background:${done?'#334155':'var(--cyan)'};color:#0B1220;border:none;padding:5px 12px;border-radius:6px;font-size:12px;cursor:${done?'not-allowed':'pointer'};font-weight:600">${done?'已处理':'去处理'}</button>
+        <button style="background:transparent;color:var(--text-dim);border:1px solid var(--line);padding:5px 12px;border-radius:6px;font-size:12px;cursor:pointer">忽略</button>
+      </div>
+    </div>`;
+  }).join('');
+  el.querySelectorAll('[data-alarm-ok]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const id = +btn.dataset.alarmOk;
+      const alarm = ALARMS.find(a=>a.id===id);
+      if(alarm){ alarm.resolved = true; renderAlarmFull(); renderAlarmHome(); }
+    });
+  });
+}
+renderAlarmFull();
+(function(){
+  const el=document.getElementById('predict-tbody');
+  el.innerHTML = PREDICT_ROWS.map(r=>{
+    const pill = r.trend==='上升'?'<span class="pill pill-red">↑ 上升</span>':
+                 r.trend==='下降'?'<span class="pill pill-green">↓ 下降</span>':
+                 '<span class="pill pill-cyan">— 平稳</span>';
+    return `<tr><td>${r.room}</td><td class="mono">${r.tomorrow.toFixed(1)}</td>
+    <td class="mono">${r.day2.toFixed(1)}</td><td class="mono">${r.day3.toFixed(1)}</td><td>${pill}</td></tr>`;
+  }).join('');
+})();
+
+/* ============ 渲染：完整建议列表 ============ */
+(function(){
+  const el=document.getElementById('advice-full-list');
+  el.innerHTML = ADVICE.map(a=>`
+    <div class="advice-item">
+      <div class="advice-head">
+        <span class="advice-tag tag-${a.tag}">${a.tagText}</span>
+        <span class="advice-title">${a.title}</span>
+        <div style="margin-left:auto;display:flex;gap:6px">
+          <button style="background:var(--green);color:#0B1220;border:none;padding:4px 12px;border-radius:5px;font-size:12px;cursor:pointer;font-weight:600">采纳</button>
+          <button style="background:transparent;color:var(--text-dim);border:1px solid var(--line);padding:4px 12px;border-radius:5px;font-size:12px;cursor:pointer">忽略</button>
+        </div>
+      </div>
+      <div class="advice-desc">${a.desc}</div>
+      <div class="advice-meta"><span>${a.meta.expected}</span><span>历史采纳率：<b>${a.meta.adopt}</b></span></div>
+    </div>`).join('');
+})();
+
+/* ============ 渲染：报表表格 ============ */
+(function(){
+  const el=document.getElementById('report-tbody');
+  el.innerHTML = REPORTS.map(r=>`
+    <tr>
+      <td>${r.d}</td>
+      <td class="mono">${r.e.toLocaleString()}</td>
+      <td class="mono">${r.ac.toLocaleString()}</td>
+      <td class="mono">${r.light.toLocaleString()}</td>
+      <td class="mono">${r.teach.toLocaleString()}</td>
+      <td class="mono">¥ ${r.cost.toFixed(2)}</td>
+      <td style="color:${r.down?'var(--green)':'var(--red)'}">${r.chg}</td>
+    </tr>`).join('');
+})();
+
+/* ============ 渲染：基础数据表格 ============ */
+(function(){
+  const el=document.getElementById('manage-tbody');
+  el.innerHTML = ROOMS.map(r=>{
+    return `<tr><td class="mono">${r.no}</td><td>${r.bld} ${r.no}教室</td><td>${r.bld}</td>
+    <td class="mono">${30+Math.floor(Math.random()*60)} 人</td><td class="mono">${r.type==='普通'?1:2} 台</td>
+    <td><span class="pill pill-green">正常</span></td><td>${r.type} · 已接入电表</td></tr>`;
+  }).join('');
+})();
+
+/* ============ ECharts 公共配置 ============ */
+const CHART_TEXT = '#8B9BB8';
+const CHART_LINE = '#1F2C4A';
+const BASE_GRID = {left:40,right:20,top:30,bottom:30};
+
+/* 收集所有图表实例（仅用于响应式 resize，不影响任何原有逻辑） */
+window._charts = [];
+
+/* 总览：24小时趋势 */
+(function(){
+  const chart = echarts.init(document.getElementById('chart-trend'),'dark');
+  window._charts.push(chart);
+  const hours = Array.from({length:24},(_,i)=>i+':00');
+  const actual = [8,6,5,5,6,8,18,35,42,48,52,46,40,38,45,50,55,48,35,22,15,12,10,9];
+  const predict = [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,11,13,16];
+  chart.setOption({
+    backgroundColor:'transparent',
+    tooltip:{trigger:'axis',backgroundColor:'#152036',borderColor:'#1F2C4A',textStyle:{color:'#E5EAF3'}},
+    legend:{data:['实际功率','预测功率'],textStyle:{color:CHART_TEXT},top:0,right:0},
+    grid:BASE_GRID,
+    xAxis:{type:'category',data:hours,axisLine:{lineStyle:{color:CHART_LINE}},axisLabel:{color:CHART_TEXT,fontSize:11}},
+    yAxis:{type:'value',name:'kW',splitLine:{lineStyle:{color:CHART_LINE}},axisLabel:{color:CHART_TEXT,fontSize:11}},
+    series:[
+      {name:'实际功率',type:'line',smooth:true,data:actual,symbol:'none',
+        lineStyle:{color:'#22D3EE',width:2},
+        areaStyle:{color:{type:'linear',x:0,y:0,x2:0,y2:1,colorStops:[
+          {offset:0,color:'rgba(34,211,238,.35)'},{offset:1,color:'rgba(34,211,238,0)'}]}}},
+      {name:'预测功率',type:'line',smooth:true,data:predict,symbol:'none',
+        lineStyle:{color:'#F59E0B',width:2,type:'dashed'},
+        areaStyle:{color:{type:'linear',x:0,y:0,x2:0,y2:1,colorStops:[
+          {offset:0,color:'rgba(245,158,11,.2)'},{offset:1,color:'rgba(245,158,11,0)'}]}}}
+    ]
+  });
+  window.addEventListener('resize',()=>chart.resize());
+})();
+
+/* 总览：能耗构成饼图 */
+(function(){
+  const chart = echarts.init(document.getElementById('chart-pie'),'dark');
+  window._charts.push(chart);
+  chart.setOption({
+    backgroundColor:'transparent',
+    tooltip:{backgroundColor:'#152036',borderColor:'#1F2C4A',textStyle:{color:'#E5EAF3'}},
+    legend:{bottom:0,textStyle:{color:CHART_TEXT,fontSize:11},icon:'circle'},
+    series:[{
+      type:'pie',radius:['50%','75%'],center:['50%','45%'],
+      label:{color:'#E5EAF3',fontSize:11,formatter:'{d}%'},
+      labelLine:{lineStyle:{color:CHART_LINE}},
+      data:[
+        {value:682,name:'空调系统',itemStyle:{color:'#22D3EE'}},
+        {value:312,name:'照明系统',itemStyle:{color:'#F59E0B'}},
+        {value:213,name:'教学设备',itemStyle:{color:'#34D399'}},
+        {value:79,name:'其他',itemStyle:{color:'#64748B'}},
+      ]
+    }]
+  });
+  window.addEventListener('resize',()=>chart.resize());
+})();
+
+/* 预测页：7+7 天对比 */
+function initPredictChart(){
+  const chart = echarts.init(document.getElementById('chart-predict'),'dark');
+  window._charts.push(chart);
+  const days = ['10/02','10/03','10/04','10/05','10/06','10/07','10/08','10/09','10/10','10/11','10/12','10/13','10/14','10/15'];
+  const hist = [1342,1428,684,512,1486,1398,1286,null,null,null,null,null,null,null];
+  const fut  = [null,null,null,null,null,null,1320,1352,986,724,1418,1456,1388,1296];
+  chart.setOption({
+    backgroundColor:'transparent',
+    tooltip:{trigger:'axis',backgroundColor:'#152036',borderColor:'#1F2C4A',textStyle:{color:'#E5EAF3'}},
+    legend:{data:['历史实际','AI 预测'],textStyle:{color:CHART_TEXT},top:0,right:0},
+    grid:BASE_GRID,
+    xAxis:{type:'category',data:days,axisLine:{lineStyle:{color:CHART_LINE}},axisLabel:{color:CHART_TEXT,fontSize:11}},
+    yAxis:{type:'value',name:'kWh',splitLine:{lineStyle:{color:CHART_LINE}},axisLabel:{color:CHART_TEXT,fontSize:11}},
+    series:[
+      {name:'历史实际',type:'bar',data:hist,itemStyle:{color:'#22D3EE',borderRadius:[4,4,0,0]},barWidth:18},
+      {name:'AI 预测',type:'bar',data:fut,itemStyle:{color:'rgba(245,158,11,.6)',borderRadius:[4,4,0,0]},barWidth:18},
+    ]
+  });
+  window.addEventListener('resize',()=>chart.resize());
+}
+
+/* 建议页：优化前后对比 */
+function initAdviceChart(){
+  const chart = echarts.init(document.getElementById('chart-advice-effect'),'dark');
+  window._charts.push(chart);
+  chart.setOption({
+    backgroundColor:'transparent',
+    tooltip:{trigger:'axis',backgroundColor:'#152036',borderColor:'#1F2C4A',textStyle:{color:'#E5EAF3'}},
+    legend:{data:['优化前','优化后'],textStyle:{color:CHART_TEXT},top:0,right:0},
+    grid:{left:40,right:16,top:30,bottom:24},
+    xAxis:{type:'category',data:['周一','周二','周三','周四','周五'],axisLine:{lineStyle:{color:CHART_LINE}},axisLabel:{color:CHART_TEXT,fontSize:11}},
+    yAxis:{type:'value',splitLine:{lineStyle:{color:CHART_LINE}},axisLabel:{color:CHART_TEXT,fontSize:11}},
+    series:[
+      {name:'优化前',type:'line',data:[1486,1452,1428,1398,1362],smooth:true,symbol:'none',lineStyle:{color:'#64748B',width:2}},
+      {name:'优化后',type:'line',data:[1420,1358,1286,1245,1198],smooth:true,symbol:'none',
+        lineStyle:{color:'#34D399',width:2},
+        areaStyle:{color:{type:'linear',x:0,y:0,x2:0,y2:1,colorStops:[
+          {offset:0,color:'rgba(52,211,153,.3)'},{offset:1,color:'rgba(52,211,153,0)'}]}}
+      },
+    ]
+  });
+  window.addEventListener('resize',()=>chart.resize());
+}
+
+/* ============ 工具箱交互 ============ */
+/* 切换工具卡片 */
+document.querySelectorAll('.tool-card').forEach(card=>{
+  card.addEventListener('click',()=>{
+    document.querySelectorAll('.tool-card').forEach(c=>c.classList.toggle('active',c===card));
+    const tool = card.dataset.tool;
+    ['sticker','calc','check'].forEach(t=>{
+      document.getElementById('panel-'+t).style.display = (t===tool?'':'none');
+    });
+    /* 面板切换后触发图表 resize，适配响应式布局 */
+    setTimeout(()=>{ window._charts.forEach(c=>c && c.resize && c.resize()); }, 60);
+  });
+});
+
+/* 工具1：上传贴纸 */
+document.getElementById('upload-zone').addEventListener('click',()=>{
+  document.getElementById('sticker-result').style.display = 'block';
+  document.getElementById('upload-zone').innerHTML = `
+    <svg viewBox="0 0 24 24" fill="none" stroke="#34D399" stroke-width="1.5"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+    <div class="u-title" style="color:var(--green)">已识别：格力挂壁式空调 KFR-35GW</div>
+    <div class="u-sub">能效 2 级 · 制冷量 3500W · 输入功率 1080W · 点击重新上传</div>`;
+});
+
+/* 工具2：电费计算器 */
+function calcFee(){
+  const p = parseFloat(document.getElementById('calc-power').value)||0;
+  const h = parseFloat(document.getElementById('calc-hours').value)||0;
+  const d = parseFloat(document.getElementById('calc-days').value)||0;
+  const price = parseFloat(document.getElementById('calc-price').value)||0;
+  const factor = parseFloat(document.getElementById('calc-mode').value)||1;
+  const daily = p/1000*h;
+  const semester = daily*d;
+  const cost = semester*price;
+  const saveKwh = semester*(1-factor);
+  const saveMoney = saveKwh*price;
+  document.getElementById('r-daily').innerHTML = daily.toFixed(1)+'<span class="u">度</span>';
+  document.getElementById('r-semester').innerHTML = Math.round(semester).toLocaleString()+'<span class="u">度</span>';
+  document.getElementById('r-cost').innerHTML = '¥ '+cost.toFixed(0);
+  document.getElementById('r-save-kwh').textContent = Math.round(saveKwh)+' 度';
+  document.getElementById('r-save-money').textContent = '¥'+saveMoney.toFixed(1);
+}
+document.getElementById('calc-btn').addEventListener('click',calcFee);
+
+/* 工具3：教室节能体检 */
+const CHECK_RESULT = {
+  '1-201':[
+    {ok:false,title:'空调温度 24°C 偏低',suggest:'建议调高至 26°C，每小时可省 0.6 度电'},
+    {ok:true,title:'照明分组合理',suggest:'6 组照明已按教学区域分控，无需调整'},
+    {ok:false,title:'投影待机 2 小时',suggest:'课间无人时段建议自动待机'},
+  ],
+  '1-202':[
+    {ok:false,title:'功率异常偏高 177%',suggest:'疑似空调故障，建议报修'},
+    {ok:false,title:'实验室门未关严',suggest:'制冷流失严重，建议闭门'},
+    {ok:true,title:'通风系统正常',suggest:'新风换气频率符合标准'},
+  ],
+  '3-501':[
+    {ok:true,title:'空调温度 24°C 合理',suggest:'智慧教室人员密集，24°C 合适'},
+    {ok:true,title:'窗帘已自动调节',suggest:'光线传感器联动正常'},
+  ],
+  '3-502':[
+    {ok:false,title:'夜间未关空调',suggest:'已触发告警，建议立即远程断电'},
+    {ok:false,title:'设备空载运行 12 小时',suggest:'预计浪费 12.6 度电'},
+  ],
+};
+document.getElementById('check-btn').addEventListener('click',()=>{
+  const room = document.getElementById('check-room').value;
+  const list = CHECK_RESULT[room]||[];
+  const okCount = list.filter(x=>x.ok).length;
+  document.getElementById('check-result').innerHTML = `
+    <div style="margin-bottom:12px;font-size:13px;color:var(--text-dim)">
+      体检完成：共 ${list.length} 项 · 正常 <b style="color:var(--green)">${okCount}</b> 项 · 待优化 <b style="color:var(--amber)">${list.length-okCount}</b> 项
+    </div>
+    ${list.map(x=>`
+      <div class="advice-item" style="border-left:3px solid ${x.ok?'var(--green)':'var(--amber)'}">
+        <div class="advice-head">
+          <span class="advice-tag ${x.ok?'tag-save':'tag-fix'}">${x.ok?'正常':'待优化'}</span>
+          <span class="advice-title">${x.title}</span>
+        </div>
+        <div class="advice-desc">${x.suggest}</div>
+      </div>`).join('')}
+  `;
+});
+
+/* ============ 移动端抽屉菜单（纯布局增强，不改动任何业务逻辑） ============ */
+(function(){
+  const sidebar  = document.getElementById('sidebar');
+  const backdrop = document.getElementById('sidebar-backdrop');
+  const menuBtn  = document.getElementById('menu-btn');
+  const MOBILE_BP = 768;
+
+  function openSidebar(){
+    sidebar.classList.add('open');
+    backdrop.classList.add('show');
+  }
+  function closeSidebar(){
+    sidebar.classList.remove('open');
+    backdrop.classList.remove('show');
+  }
+  menuBtn.addEventListener('click', ()=>{
+    sidebar.classList.contains('open') ? closeSidebar() : openSidebar();
+  });
+  backdrop.addEventListener('click', closeSidebar);
+  document.addEventListener('keydown', e=>{ if(e.key === 'Escape') closeSidebar(); });
+
+  /* 转到桌面宽度时自动收起抽屉 */
+  let resizeTimer = null;
+  window.addEventListener('resize', ()=>{
+    if(window.innerWidth > MOBILE_BP) closeSidebar();
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(()=>{
+      window._charts.forEach(c=>c && c.resize && c.resize());
+    }, 200);
+  });
+
+  window.closeSidebar = closeSidebar;
+})();
+</script>
+</body>
+</html>
